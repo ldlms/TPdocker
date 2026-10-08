@@ -1,0 +1,13 @@
+/temp/
+/webapps/*.war
+/dependency/*.jar
+/logs/
+/data/
+
+/.env
+/docker-compose-*.yml
+/compose.yml
+/compose-*.yml
+
+*.p12
+*.jks

@@ -1,0 +1,36 @@
+services:
+
+  webapp:
+    image: 'local/dockerjava-war'
+    build:
+      context: '../dockerJava'
+    profiles: ['build']
+  tomcat:
+    image: 'local/tomcat:11-jdk21'
+    build:
+      context: '.'
+      additional_contexts:
+        webapp: 'service:webapp'
+    
+    environment:
+      DB_RESOURCE_NAME: 'jdbc/helloworld'
+      DB_URL: 'jdbc:postgresql://postgres-1.localdomain/helloworld'
+      DB_USERNAME: 'user'
+      DB_PASSWORD_FILE: 'secrets/db-password'
+      DB_DRIVER_CLASS_NAME: 'org.postgresql.Driver'
+      MANAGER_PASSWORD_FILE: 'secrets/manager-password'
+
+    volumes:  
+    - './dependency/postgresql-42.2.5.jar:/usr/local/tomcat/lib/postgresql-42.2.5.jar:ro'
+    - './secrets/manager-password:/usr/local/tomcat/secrets/manager-password:ro'
+    - './secrets/db-password:/usr/local/tomcat/secrets/db-password:ro'
+    - './logs:/usr/local/tomcat/logs'
+    
+    ports:
+    - '8080:8080'
+
+volumes: {}
+
+networks:
+  helloworld:
+    driver : bridge
