@@ -1,10 +1,26 @@
 services:
 
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: helloworld
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    volumes:
+      - pgdata:/var/lib/postgresql/data                    
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  
+      - ./secrets/db-password:/run/secrets/db-password:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d helloworld"]
+      interval: 5s
+      retries: 10
+
   webapp:
     image: 'local/dockerjava-war'
     build:
       context: '../dockerJava'
-    profiles: ['build']
+    deploy: 
+      replicas: 0
   tomcat:
     image: 'local/tomcat:11-jdk21'
     build:
@@ -14,23 +30,20 @@ services:
     
     environment:
       DB_RESOURCE_NAME: 'jdbc/helloworld'
-      DB_URL: 'jdbc:postgresql://postgres-1.localdomain/helloworld'
+      DB_URL: 'jdbc:postgresql://db:5432/helloworld'
       DB_USERNAME: 'user'
       DB_PASSWORD_FILE: 'secrets/db-password'
       DB_DRIVER_CLASS_NAME: 'org.postgresql.Driver'
       MANAGER_PASSWORD_FILE: 'secrets/manager-password'
+    depends_on:
+      db:
+        condition: service_healthy
 
     volumes:  
-    - './dependency/postgresql-42.2.5.jar:/usr/local/tomcat/lib/postgresql-42.2.5.jar:ro'
     - './secrets/manager-password:/usr/local/tomcat/secrets/manager-password:ro'
     - './secrets/db-password:/usr/local/tomcat/secrets/db-password:ro'
     - './logs:/usr/local/tomcat/logs'
-    
-    ports:
-    - '8080:8080'
 
-volumes: {}
+volumes:
+  pgdata:
 
-networks:
-  helloworld:
-    driver : bridge

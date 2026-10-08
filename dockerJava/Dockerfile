@@ -10,6 +10,7 @@ COPY src ./src
 
 RUN --mount=type=cache,target=/root/.m2 mvn clean package
 
+FROM scratch
 COPY --from=build /app/target/api.war /api.war
 
 

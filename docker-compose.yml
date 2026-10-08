@@ -12,7 +12,3 @@ services:
     depends_on:
       - tomcat
     restart: unless-stopped
-
-networks:
-  dockerTP:
-    driver: overlay

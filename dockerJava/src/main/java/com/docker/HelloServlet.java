@@ -16,3 +16,4 @@ public class HelloServlet extends HttpServlet {
         resp.getWriter().write("{\"message\":\"Hello World!\"}");
     }
 }
+
