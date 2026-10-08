@@ -1,14 +1,25 @@
+# Socle commun (front + Tomcat). La base est ajoutée par dockerServer/db/<base>.yaml,
+# choisi via COMPOSE_FILE dans le .env écrit par : docker compose run --rm setup
 name: dockertp
 
 include:
   - dockerServer/docker-compose.yml
 
 services:
+  setup:
+    build: ./setup
+    profiles: [setup]
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/project
+
   front:
     build:
       context: ./dockerJs
     ports:
       - "80:80"
     depends_on:
-      - tomcat
+      tomcat:
+        condition: service_healthy
     restart: unless-stopped

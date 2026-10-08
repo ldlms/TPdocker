@@ -1,0 +1,32 @@
+# PostgreSQL. Chemins relatifs à la racine du projet.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./dockerServer/db/init/postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./dockerServer/secrets/db-password:/run/secrets/db-password:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+  tomcat:
+    build:
+      args:
+        DB_DRIVER_JAR_URL: https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USER}
+      DB_DRIVER_CLASS_NAME: org.postgresql.Driver
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

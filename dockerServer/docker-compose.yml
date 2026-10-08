@@ -1,49 +1,29 @@
 services:
 
-  db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: helloworld
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
-    volumes:
-      - pgdata:/var/lib/postgresql/data                    
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  
-      - ./secrets/db-password:/run/secrets/db-password:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d helloworld"]
-      interval: 5s
-      retries: 10
-
   webapp:
     image: 'local/dockerjava-war'
     build:
       context: '../dockerJava'
-    deploy: 
+    deploy:
       replicas: 0
+
   tomcat:
     image: 'local/tomcat:11-jdk21'
     build:
       context: '.'
       additional_contexts:
         webapp: 'service:webapp'
-    
     environment:
       DB_RESOURCE_NAME: 'jdbc/helloworld'
-      DB_URL: 'jdbc:postgresql://db:5432/helloworld'
-      DB_USERNAME: 'user'
       DB_PASSWORD_FILE: 'secrets/db-password'
-      DB_DRIVER_CLASS_NAME: 'org.postgresql.Driver'
       MANAGER_PASSWORD_FILE: 'secrets/manager-password'
-    depends_on:
-      db:
-        condition: service_healthy
-
-    volumes:  
-    - './secrets/manager-password:/usr/local/tomcat/secrets/manager-password:ro'
-    - './secrets/db-password:/usr/local/tomcat/secrets/db-password:ro'
-    - './logs:/usr/local/tomcat/logs'
-
-volumes:
-  pgdata:
-
+    volumes:
+      - './secrets/manager-password:/usr/local/tomcat/secrets/manager-password:ro'
+      - './secrets/db-password:/usr/local/tomcat/secrets/db-password:ro'
+      - './logs:/usr/local/tomcat/logs'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/api/hello"]
+      interval: 5s
+      start_period: 60s
+      retries: 5

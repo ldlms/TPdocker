@@ -1,0 +1,34 @@
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD_FILE: /run/secrets/db-password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db-root-password
+    volumes:
+      - mariadbdata:/var/lib/mysql
+      - ./dockerServer/db/init/mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./dockerServer/secrets/db-password:/run/secrets/db-password:ro
+      - ./dockerServer/secrets/db-root-password:/run/secrets/db-root-password:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 30
+    restart: unless-stopped
+
+  tomcat:
+    build:
+      args:
+        DB_DRIVER_JAR_URL: https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/3.5.1/mariadb-java-client-3.5.1.jar
+    environment:
+      DB_URL: jdbc:mariadb://db:3306/${DB_NAME}
+      DB_USERNAME: ${DB_USER}
+      DB_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mariadbdata:
