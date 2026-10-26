@@ -15,8 +15,7 @@ afin de limiter le code boilerplate a effectuer lors de la creation d'une applic
 2. [Architecture et schéma des communications](#2-architecture-et-schéma-des-communications)
 3. [Les images](#3-les-images)
 4. [Orchestration](#4-orchestration)
-5. [Organisation des fichiers](#5-organisation-des-fichiers)
-6. [Commandes utiles et dépannage](#6-commandes-utiles-et-dépannage)
+5. [Commandes utiles et dépannage](#6-commandes-utiles-et-dépannage)
 
 ---
 
@@ -216,37 +215,21 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 - **`front` et `db`** : les images officielles déclarent elles-mêmes le signal adapté à leur arrêt propre. MySQL et MariaDB gèrent SIGTERM nativement.
 - **`setup`** : Node n'est pas conçu pour tourner en PID 1. Linux ignore alors les signaux pour lesquels il n'a rien prévu, et un Ctrl+C restait sans effet. **`init: true`** place en PID 1 un mini-processus (`tini`) qui transmet les signaux à Node.
 
-## 5. Organisation des fichiers
+## 6. Commandes utiles et dépannage
 
-```
-TPdocker/
-├── docker-compose.yml              socle : setup, front, inclusion de dockerServer
-├── start.ps1                       setup + build + démarrage en une commande
-├── .env                            GÉNÉRÉ par le setup (base choisie, nom, utilisateur)
-├── setup/                          assistant de configuration
-│   ├── Dockerfile
-│   ├── databases.json              liste des bases proposées
-│   └── setup.mjs
-├── dockerJava/                     code de l'API (servlets) → api.war
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/main/java/com/docker/   HelloServlet (/api/hello), MessageServlet (/api/messages)
-├── dockerServer/                   Tomcat
-│   ├── Dockerfile
-│   ├── docker-compose.yml          services webapp et tomcat
-│   ├── run-catalina.sh             script de démarrage
-│   ├── conf/                       context.xml (DataSource JNDI), tomcat-users.xml
-│   ├── secrets/                    GÉNÉRÉ par le setup (mots de passe)
-│   └── db/
-│       ├── postgres.yaml           fragment : service db + réglages de tomcat
-│       ├── mysql.yaml
-│       ├── mariadb.yaml
-│       └── init/                   scripts SQL de création des tables
-└── dockerJs/                       front React + nginx
-    ├── Dockerfile
-    └── nginx.conf
-```
+| Commande | Usage |
+|---|---|
+| `docker compose ps` | état et santé des conteneurs |
+| `docker compose logs -f tomcat` | logs en direct d'un service |
+| `docker compose config` | configuration finale après fusion des fichiers |
+| `docker stats` | consommation mémoire et CPU |
+| `docker compose exec db psql -U app -d app` | console SQL (PostgreSQL) |
+| `docker compose down` | arrêt (les données sont conservées) |
+| `docker compose down -v` | arrêt **et suppression des données** |
 
-**Ajouter une base de données** : une entrée dans `setup/databases.json`, un fragment `dockerServer/db/<base>.yaml` et un script `dockerServer/db/init/<base>.sql`. Aucune autre modification n'est nécessaire.
-
----
+| Symptôme | Cause et solution |
+|---|---|
+| `No database yet configured` au build | Le setup n'a pas été lancé : `docker compose run --rm setup` |
+| Tomcat `unhealthy`, connexion à la base refusée | Un ancien volume contient une base créée avec d'autres identifiants : `docker compose down -v`, puis relancer |
+| `bash: -: invalid option` dans les logs de Tomcat | Fins de ligne Windows dans un script `.sh` : corrigées automatiquement par le `sed` du Dockerfile, reconstruire l'image |
+| Port 80 déjà utilisé | Ajouter `FRONT_PORT=8080` dans le `.env` |
