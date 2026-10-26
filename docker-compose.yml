@@ -11,6 +11,7 @@ services:
     profiles: [setup]
     stdin_open: true
     tty: true
+    init: true 
     volumes:
       - .:/project
 
@@ -22,7 +23,7 @@ services:
         limits:
           memory: 64M 
     ports:
-      - "80:80"
+      - "${FRONT_PORT:-80}:80"
     depends_on:
       tomcat:
         condition: service_healthy
