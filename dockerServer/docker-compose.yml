@@ -5,19 +5,19 @@ services:
     build:
       context: '../dockerJava'
     deploy:
-      replicas: 0
+      replicas: 0 # pas besoin de replica, besoin de garder le service up une fois que le .war est cree
 
   tomcat:
     image: 'local/dockertp-tomcat'
     build:
       context: '.'
-      additional_contexts:
+      additional_contexts: # permet au service d'accéder au resultat du build du service webapp pour copier le .war dans le tomcat
         webapp: 'service:webapp'
     environment:
       DB_RESOURCE_NAME: 'jdbc/helloworld'
       DB_PASSWORD_FILE: 'secrets/db-password'
       MANAGER_PASSWORD_FILE: 'secrets/manager-password'
-      JAVA_OPTS: '-XX:MaxRAMPercentage=75' #vraiment utile ?
+      JAVA_OPTS: '-XX:MaxRAMPercentage=75' #voir doc 
     deploy:
       resources:
           limits:

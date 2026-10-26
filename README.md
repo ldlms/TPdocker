@@ -181,7 +181,7 @@ Le projet construit quatre images et utilise des images officielles pour les bas
 | `setup` | `setup/Dockerfile` | `node:22-alpine` | Assistant de configuration |
 | `db` | aucun (image officielle) | `postgres:17-alpine`, `mysql:8.4` ou `mariadb:11.4` | Base de données |
 
-Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi-stage build*) : les outils de compilation (Maven, Node) restent dans l'étape de build et n'arrivent jamais dans l'image finale.
+Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi-stage build*) : les outils de compilation (Maven, Node) restent dans l'étape de build et n'arrivent jamais dans l'image finale. J'ai essayé de tirer parti de l'architecture en couche des fichiers dockerfile en placant les couches les plus susceptibles au changement en fin de fichier afin de ne pas trigger des actions qui n'auaraient pas étés modifiées. J'ai aussi essayé de tirer profit du cache de buildkit afin de limiter les actions effectués a chaque redémarrage.
 
 ## 4. Orchestration
 
@@ -215,7 +215,7 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 - **`front` et `db`** : les images officielles déclarent elles-mêmes le signal adapté à leur arrêt propre. MySQL et MariaDB gèrent SIGTERM nativement.
 - **`setup`** : Node n'est pas conçu pour tourner en PID 1. Linux ignore alors les signaux pour lesquels il n'a rien prévu, et un Ctrl+C restait sans effet. **`init: true`** place en PID 1 un mini-processus (`tini`) qui transmet les signaux à Node.
 
-## 6. Commandes utiles et dépannage
+## 5. Commandes utiles et dépannage
 
 | Commande | Usage |
 |---|---|

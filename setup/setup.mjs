@@ -47,7 +47,7 @@ console.log('Bases disponibles :');
 keys.forEach((k, i) => console.log(`  ${i + 1}) ${databases[k].label}`));
 let db;
 while (!db) {
-  const choice = await ask('Votre choix', '1');
+  const choice = await ask('Votre choix (taper 1, 2 ou 3 pour choisir la base de données)', '1');
   db = keys[Number(choice) - 1] ?? (keys.includes(choice) ? choice : undefined);
   if (!db) console.log('  -> choix invalide.');
 }
@@ -74,9 +74,4 @@ DB_USER=${dbUser}
 
 console.log(`
 OK : ${databases[db].label}, base "${dbName}", utilisateur "${dbUser}".
-Fichiers écrits : .env, dockerServer/secrets/
-
-Lancez maintenant :  docker compose up --build
-Si vous changez de nom de base ou d'utilisateur pour une base déjà créée,
-supprimez d'abord ses données :  docker compose down -v
 `);

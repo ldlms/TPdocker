@@ -11,9 +11,10 @@ services:
     profiles: [setup]
     stdin_open: true
     tty: true # documente un service interactif, fourni un terminal
-    init: true 
+    init: true # permet d'eviter que node soit le PID 1 du conteneur
     volumes:
-      - .:/project
+      - .:/project #cree un lien entre le directory du projet en local et un directory du container
+                  # permet de lire le .env qui sera cree lors du setup
 
   front:
     build:
@@ -23,8 +24,8 @@ services:
         limits:
           memory: 64M 
     ports:
-      - "${FRONT_PORT:-80}:80"
+      - "${FRONT_PORT:-80}:80" #variable en cas de conflit de port, sinon 80 par défaut
     depends_on:
       tomcat:
-        condition: service_healthy
+        condition: service_healthy # verifie que le service tomcat est bien démarré avant de lancer le front
     restart: unless-stopped
