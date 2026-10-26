@@ -10,7 +10,7 @@ services:
     build: ./setup
     profiles: [setup]
     stdin_open: true
-    tty: true
+    tty: true # documente un service interactif, fourni un terminal
     init: true 
     volumes:
       - .:/project
