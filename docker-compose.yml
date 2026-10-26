@@ -17,6 +17,10 @@ services:
   front:
     build:
       context: ./dockerJs
+    deploy:
+      resources:
+        limits:
+          memory: 64M 
     ports:
       - "80:80"
     depends_on:

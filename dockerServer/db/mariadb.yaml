@@ -12,6 +12,10 @@ services:
       - ./dockerServer/db/init/mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./dockerServer/secrets/db-password:/run/secrets/db-password:ro
       - ./dockerServer/secrets/db-root-password:/run/secrets/db-root-password:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
