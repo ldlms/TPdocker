@@ -183,6 +183,8 @@ Le projet construit quatre images et utilise des images officielles pour les bas
 
 Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi-stage build*) : les outils de compilation (Maven, Node) restent dans l'étape de build et n'arrivent jamais dans l'image finale. J'ai essayé de tirer parti de l'architecture en couche des fichiers dockerfile en placant les couches les plus susceptibles au changement en fin de fichier afin de ne pas trigger des actions qui n'auaraient pas étés modifiées. J'ai aussi essayé de tirer profit du cache de buildkit afin de limiter les actions effectués a chaque redémarrage.
 
+`CMD` ou `ENTRYPOINT` : Les images du projet utilisent CMD : c’est la commande par défaut, qu’on peut remplacer facilement pour déboguer (docker compose run --rm tomcat bash). Aucune de nos images n’a besoin d’un programme fixe auquel on passerait des arguments, ce qui est le cas d’usage d’ENTRYPOINT. L’image nginx garde son propre ENTRYPOINT, qui prépare la configuration avant de lancer sa CMD. Toutes les commandes sont écrites sous forme de tableau JSON (["node", "setup.mjs"]) : le programme est lancé directement, sans shell intermédiaire, et devient le PID 1 qui reçoit les signaux d’arrêt.
+
 ## 4. Orchestration
 
 ### 4.1 Limitation des ressources
