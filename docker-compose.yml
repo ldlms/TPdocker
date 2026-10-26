@@ -29,3 +29,25 @@ services:
       tomcat:
         condition: service_healthy # verifie que le service tomcat est bien démarré avant de lancer le front
     restart: unless-stopped
+
+  lint-dockerfiles:
+    image: hadolint/hadolint:v2.12.0
+    profiles: [lint]
+    working_dir: /src
+    volumes:
+      - .:/src:ro          # lecture seule : le lint ne modifie rien
+    command: ["hadolint", "dockerServer/Dockerfile", "dockerJava/Dockerfile", "dockerJs/Dockerfile", "setup/Dockerfile"]
+
+  lint-shell:
+    image: koalaman/shellcheck:stable
+    profiles: [lint]
+    working_dir: /src
+    volumes:
+      - .:/src:ro
+    command: ["dockerServer/run-catalina.sh"]
+
+  lint-front:
+    build:
+      context: ./dockerJs
+      target: lint          # construit seulement jusqu'à l'étape "lint"
+    profiles: [lint]

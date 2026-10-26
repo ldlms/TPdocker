@@ -43,11 +43,11 @@ if (existsSync(`${PROJECT}/.env`)) {
   }
 }
 
-console.log('Bases disponibles :');
+console.log('Bases disponibles (taper 1, 2 ou 3 pour choisir la base de données):');
 keys.forEach((k, i) => console.log(`  ${i + 1}) ${databases[k].label}`));
 let db;
 while (!db) {
-  const choice = await ask('Votre choix (taper 1, 2 ou 3 pour choisir la base de données)', '1');
+  const choice = await ask('Votre choix', '1');
   db = keys[Number(choice) - 1] ?? (keys.includes(choice) ? choice : undefined);
   if (!db) console.log('  -> choix invalide.');
 }

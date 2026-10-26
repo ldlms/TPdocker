@@ -217,6 +217,29 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 - **`front` et `db`** : les images officielles déclarent elles-mêmes le signal adapté à leur arrêt propre. MySQL et MariaDB gèrent SIGTERM nativement.
 - **`setup`** : Node n'est pas conçu pour tourner en PID 1. Linux ignore alors les signaux pour lesquels il n'a rien prévu, et un Ctrl+C restait sans effet. **`init: true`** place en PID 1 un mini-processus (`tini`) qui transmet les signaux à Node.
 
+### 4.6 Lint
+
+Trois services vérifient la qualité du code. Comme `setup`, ils ont le profil `lint` : `docker compose up` les ignore, et on les lance à la demande.
+
+| Service | Outil | Vérifie |
+|---|---|---|
+| `lint-dockerfiles` | hadolint (`hadolint/hadolint`) | les 4 Dockerfiles |
+| `lint-shell` | shellcheck (`koalaman/shellcheck`) | `run-catalina.sh` |
+| `lint-front` | ESLint (`npm run lint`) | le code React, via l'étape `lint` de `dockerJs/Dockerfile` |
+
+```bash
+docker compose run --rm lint-dockerfiles
+docker compose run --rm lint-shell
+docker compose run --rm --build lint-front
+```
+
+- Chaque outil tourne dans son image officielle : rien à installer sur la machine.
+- Le projet est monté en **lecture seule** (`.:/src:ro`) : le lint ne peut rien modifier.
+- Chaque commande renvoie un code d'erreur si un problème est trouvé : elles peuvent donc être enchaînées dans un script ou une intégration continue.
+- Deux règles de hadolint sont des faux positifs, ignorés et justifiés : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
+
+---
+
 ## 5. Commandes utiles et dépannage
 
 | Commande | Usage |
