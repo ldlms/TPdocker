@@ -101,7 +101,7 @@ sequenceDiagram
 
 | Fichier | Contenu |
 |---|---|
-| `.env` | `COMPOSE_FILE` (socle + fragment de la base choisie), `DB_NAME`, `DB_USER` |
+| `.env` | `COMPOSE_FILE` (socle + fragment de la base choisie), `DB_NAME`, `DB_USER`, `NB_REPLICAS` |
 | `dockerServer/secrets/db-password` | Mot de passe de l'utilisateur de la base (aléatoire) |
 | `dockerServer/secrets/manager-password` | Mot de passe du compte de `tomcat-users.xml` (aléatoire) |
 | `dockerServer/secrets/db-root-password` | Mot de passe root, uniquement pour MySQL et MariaDB (aléatoire) |
@@ -237,6 +237,33 @@ docker compose run --rm --build lint-front
 - Le projet est monté en **lecture seule** (`.:/src:ro`) : le lint ne peut rien modifier.
 - Chaque commande renvoie un code d'erreur si un problème est trouvé : elles peuvent donc être enchaînées dans un script ou une intégration continue.
 - Deux règles de hadolint sont des faux positifs, ignorés et justifiés : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
+
+### 4.7 Scaling de Tomcat
+
+Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est écrite dans le `.env` (`TOMCAT_REPLICAS`), puis utilisée par le compose :
+
+```yaml
+  tomcat:
+    deploy:
+      replicas: ${TOMCAT_REPLICAS:-1}   # 1 par défaut si la variable est absente du .env
+```
+
+**Pourquoi Docker Compose suffit, sans Swarm.** Sur une seule machine, Compose sait lancer plusieurs conteneurs d'un même service. Trois éléments le permettent :
+
+- **Pas de `container_name` ni de port publié sur `tomcat`.** Compose nomme lui-même les conteneurs (`dockertp-tomcat-1`, `-2`…), et aucun ne réserve de port sur la machine hôte.
+- **Le DNS de Docker** renvoie l'adresse de toutes les instances pour le nom `tomcat`.
+- **nginx répartit les requêtes** entre ces adresses (`server tomcat:8080 resolve;` dans l'`upstream`), et retire automatiquement une instance qui ne répond plus.
+
+**Résultats mesurés avec 3 instances** : 60 requêtes simultanées se répartissent en **6 / 6 / 6** connexions, et avec une instance arrêtée, **20 requêtes sur 20** réussissent.
+
+**Limites :**
+
+- **Les ressources sont par instance** : 3 Tomcat peuvent consommer jusqu'à 3 × 768 Mo et 3 CPU.
+- **Seul `tomcat` est multipliable** : `front` publie le port 80, qu'un seul conteneur peut occuper, et `db` ne se duplique pas sans mettre en place une réplication.
+- **Sessions HTTP** : chaque Tomcat garde ses sessions en mémoire. L'API actuelle n'en utilise pas. Si c'était le cas, il faudrait des sessions persistantes dans nginx, un stockage partagé (Redis) ou une API sans état (jeton JWT).
+- **Swarm ou Kubernetes** ne deviennent utiles que pour répartir sur **plusieurs machines** ou mettre à jour sans interruption.
+
+Pour un essai ponctuel, la ligne de commande l'emporte sur le `.env` : `docker compose up -d --scale tomcat=3`.
 
 ---
 

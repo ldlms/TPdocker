@@ -25,6 +25,14 @@ async function askIdentifier(question, fallback) {
   }
 }
 
+async function askReplicas(question, fallback) {
+  for(;;){
+    const value = await ask(question, fallback);
+    if (/^\d+$/.test(value) && Number(value) > 0 && Number(value) <= 10) return Number(value);
+    console.log('  -> veuillez entrer un nombre entre 1 et 10.');
+  }
+}
+
 const password = () => randomBytes(18).toString('base64url');
 
 function writeSecret(name, value, overwrite) {
@@ -54,6 +62,7 @@ while (!db) {
 
 const dbName = await askIdentifier('Nom de la base', 'app');
 const dbUser = await askIdentifier('Utilisateur', 'app');
+const dbReplicas = await askReplicas('Nombre de réplicas', '1');
 const newPasswords = (await ask('Générer de nouveaux mots de passe ? (o/n)', 'o'))
   .toLowerCase().startsWith('o');
 rl.close();
@@ -70,6 +79,7 @@ COMPOSE_PATH_SEPARATOR=;
 
 DB_NAME=${dbName}
 DB_USER=${dbUser}
+NB_REPLICAS=${dbReplicas}
 `);
 
 console.log(`

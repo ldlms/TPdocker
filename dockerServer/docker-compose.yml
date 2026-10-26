@@ -5,8 +5,7 @@ services:
     build:
       context: '../dockerJava'
     deploy:
-      replicas: 0 # pas besoin de replica, besoin de garder le service up une fois que le .war est cree
-
+      replicas: 0 # aucun conteneur : le service sert uniquement à construire l'image qui contient le .war
   tomcat:
     image: 'local/dockertp-tomcat'
     build:
@@ -19,6 +18,7 @@ services:
       MANAGER_PASSWORD_FILE: 'secrets/manager-password'
       JAVA_OPTS: '-XX:MaxRAMPercentage=75' #voir doc 
     deploy:
+      replicas: ${NB_REPLICAS:-1} # par défaut 1 replica, sinon valeur du .env
       resources:
           limits:
             cpus: '1.0'
