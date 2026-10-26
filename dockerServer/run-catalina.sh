@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/bin/bash
+set -e
 
 if [ ! -f "${MANAGER_PASSWORD_FILE}" ]; then
     echo "The password file (MANAGER_PASSWORD_FILE) is missing: ${MANAGER_PASSWORD_FILE}" && exit 1
