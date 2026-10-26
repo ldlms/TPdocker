@@ -18,10 +18,11 @@ services:
       DB_PASSWORD_FILE: 'secrets/db-password'
       MANAGER_PASSWORD_FILE: 'secrets/manager-password'
       JAVA_OPTS: '-XX:MaxRAMPercentage=75'
-    resources:
-        limits:
-          cpus: '1.0'
-          memory: 768M
+    deploy:
+      resources:
+          limits:
+            cpus: '1.0'
+            memory: 768M
     volumes:
       - './secrets/manager-password:/usr/local/tomcat/secrets/manager-password:ro'
       - './secrets/db-password:/usr/local/tomcat/secrets/db-password:ro'
