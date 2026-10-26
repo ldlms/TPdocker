@@ -1,7 +1,7 @@
 # TPdocker : boilerplate Tomcat conteneurisé
 
 Application web complète conteneurisée avec Docker Compose, le but étant de proposer un template, 
-afin de limiter le code boilerplate a effectuer lors de la creation d'une application centrée sur un .war. L'application démarre via un script qui initialisera un tomcat servant l'application java et une base de donnée sera initailisée via les choix de l'utilisateur, un front-end en React sera lui aussi crée lors du lancement du script : :
+afin de limiter le code boilerplate a effectuer lors de la creation d'une application centrée sur un .war. L'application démarre via un script qui initialisera un tomcat servant l'application java et une base de donnée sera initailisée via les choix de l'utilisateur, un front-end en React sera lui aussi crée lors du lancement du script :
 
 - un **front React** (Vite) servi par **nginx** ;
 - une **API Java** (servlets Jakarta) packagée en WAR et déployée dans **Tomcat 11** ;
