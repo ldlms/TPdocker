@@ -13,6 +13,6 @@ ADD ${DB_DRIVER_JAR_URL} ./lib/
 COPY --from=webapp /api.war ./webapps/api.war
 
 COPY run-catalina.sh /run-catalina.sh
-RUN chmod +x /run-catalina.sh
+RUN sed -i 's/\r$//' /run-catalina.sh && chmod +x /run-catalina.sh
 
 CMD ["/run-catalina.sh"]
