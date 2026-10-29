@@ -243,7 +243,7 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 
 ### 4.4 Ressources  
 
-Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu, grâce a la légèreté des tomcats (test lancés via `docker compose run --rm loadtest`) :
+Meme avec 10 Tomcats lancés, la consomation reste acceptable (surtout compte tenu du poid du conteneur grafana qui lance les tests de stress), même sous traffic soutenu, grâce a la légèreté des tomcats (test lancés via `docker compose run --rm loadtest`) :
 
 ![alt text](img/image.png)
 
@@ -260,8 +260,8 @@ Les différents tomcats, eux se repartissent bien la charge de manière égale :
 | Conteneur | Limite | Justification |
 |---|---|---|
 | `front` (nginx) | **64 Mo** | nginx ne sert que des fichiers statiques et relaie des requêtes : il consomme quelques Mo. 64 Mo laissent une marge confortable. |
-| `tomcat` | **768 Mo, 1 CPU** | Une JVM a besoin d'espace pour ses objets (*heap*), mais aussi pour le code compilé, les threads et le reste de la JVM. 1 CPU permet à Tomcat de démarrer bien avant les 60 s du `start_period` du healthcheck : avec moins, le démarrage ralentit fortement. |
-| `tomcat` (JVM) | **`-XX:MaxRAMPercentage=75`** | La JVM lit la limite du conteneur et s'accorde 75 % pour le *heap* (environ 576 Mo). Les 25 % restants servent au reste de la JVM. Sans cette option, la JVM ne prendrait que 25 % de la mémoire par défaut. Sans limite dans le compose, le pourcentage s'appliquerait à toute la mémoire de la machine. |
+| `tomcat` | **384 Mo, 1 CPU** | Une JVM a besoin d'espace pour ses objets (*heap*), mais aussi pour le code compilé, les threads et le reste de la JVM. 1 CPU permet à Tomcat de démarrer bien avant les 60 s du `start_period` du healthcheck : avec moins, le démarrage ralentit fortement. La valeur de 384 Mo à étée reajustée après des tests, elle etait originellement a 768 mais suite au stress test, il est apparu que 384 etait suffisant |
+| `tomcat` (JVM) | **`-XX:MaxRAMPercentage=75`** | La JVM lit la limite du conteneur et s'accorde 75 % pour le *heap* (environ 288 Mo). Les 25 % restants servent au reste de la JVM. Sans cette option, la JVM ne prendrait que 25 % de la mémoire par défaut. Sans limite dans le compose, le pourcentage s'appliquerait à toute la mémoire de la machine. |
 | `db` (les 3 bases) | **512 Mo** | Suffisant pour une petite base de développement. MySQL et MariaDB sont les plus gourmands au démarrage. |
 | `webapp` | aucune | Jamais lancé (`replicas: 0`) |
 | `setup` | aucune | Ne vit que quelques secondes, le temps des questions |
