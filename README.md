@@ -278,8 +278,6 @@ Les différents tomcats, eux se repartissent bien la charge de manière égale :
 - **Sessions HTTP** : chaque Tomcat garde ses sessions en mémoire. L'API actuelle n'en utilise pas. Si c'était le cas, il faudrait des sessions persistantes dans nginx, un stockage partagé (Redis) ou une API sans état (jeton JWT).
 - **Swarm ou Kubernetes** ne deviennent utiles que pour répartir sur **plusieurs machines** ou mettre à jour sans interruption.
 
-Pour un essai ponctuel, la ligne de commande l'emporte sur le `.env` : `docker compose up -d --scale tomcat=3`.
-
 ### 4.4 Pourquoi pas swarm ?
 
 Il aurait fallu rajouter une surcouche swarm qui aurait lancée les différents conteneurs préparés par le docker compose en amont, et qui auraient étés push sur mon regstry perso, c'est la prochaine étape mais je n'ai malheureusement pas reussi à le setup avant la fin du rendu...
