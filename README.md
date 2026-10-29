@@ -187,7 +187,28 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 
 ## 4. Orchestration
 
-### 4.1 Gestion des SIGTERM
+### 4.1 Réseau, volumes et secrets
+
+| Élément | Détail |
+|---|---|
+| Réseau | Un seul réseau privé, `dockertp_default`, partagé par **tous** les services. Seul `front` publie un port. |
+| Volumes | Un volume nommé **par base** (`pgdata`, `mysqldata`, `mariadbdata`). Changer de base ne détruit donc pas les données de l'autre. |
+| Secrets | Fichiers générés par le setup dans `dockerServer/secrets/`, montés en **lecture seule** (`:ro`). Exclus de Git. |
+| Redémarrage | `restart: unless-stopped` sur `front`, `tomcat` et `db` |
+
+**Pourquoi la base est sur le même réseau que Tomcat et le front.** Aucun fichier compose ne déclare de section `networks:`. Dans ce cas, Compose crée un réseau par défaut **par projet** et y branche tous les services. Or les trois sources de services forment **un seul projet** (`name: dockertp`) :
+
+- `front` et `setup` viennent de `docker-compose.yml` ;
+- `tomcat` vient de `dockerServer/docker-compose.yml`, chargé par `include` ;
+- `db` vient de `dockerServer/db/<base>.yaml`, chargé par `COMPOSE_FILE`.
+
+Ils se retrouvent donc tous sur `dockertp_default`, où chacun est joignable par le nom de son service. C'est ce qui permet à Tomcat d'utiliser l'URL `jdbc:postgresql://db:5432/...`. Pour le vérifier :
+
+```bash
+docker network inspect dockertp_default --format "{{range .Containers}}{{.Name}}  {{end}}"
+```
+
+### 4.2 Gestion des SIGTERM
 
 À l'arrêt (`docker compose stop`, `down`, ou un redémarrage), Docker envoie un signal **au PID 1** du conteneur, puis le tue de force (SIGKILL) au bout de 10 secondes s'il est toujours là. Un arrêt propre suppose donc que le vrai programme soit le PID 1 et qu'il réagisse au signal.
 
@@ -202,7 +223,7 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 - **`front` et `db`** : les images officielles déclarent elles-mêmes le signal adapté à leur arrêt propre. MySQL et MariaDB gèrent SIGTERM nativement.
 - **`setup`** : Node n'est pas conçu pour tourner en PID 1. Linux ignore alors les signaux pour lesquels il n'a rien prévu, et un Ctrl+C restait sans effet. **`init: true`** place en PID 1 un mini-processus (`tini`) qui transmet les signaux à Node.
 
-### 4.2 Lint
+### 4.3 Lint
 
 Trois services vérifient la qualité du code. Comme `setup`, ils ont le profil `lint` : `docker compose up` les ignore, et on les lance à la demande.
 
@@ -223,7 +244,7 @@ docker compose run --rm --build lint-front
 - Chaque commande renvoie un code d'erreur si un problème est trouvé : elles peuvent donc être enchaînées dans un script ou une intégration continue.
 - Deux règles de hadolint sont des faux positifs, ignorés et justifiés : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
 
-### 4.3 Scaling de Tomcat
+### 4.4 Scaling de Tomcat
 
 Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est écrite dans le `.env` (`TOMCAT_REPLICAS`), puis utilisée par le compose :
 
@@ -241,7 +262,7 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 
 **Résultats mesurés avec 3 instances** : 60 requêtes simultanées se répartissent en **6 / 6 / 6** connexions, et avec une instance arrêtée, **20 requêtes sur 20** réussissent.
 
-### 4.4 Ressources  
+### 4.5 Ressources  
 
 Meme avec 10 Tomcats lancés, la consomation reste acceptable (surtout compte tenu du poid du conteneur grafana qui lance les tests de stress), même sous traffic soutenu, grâce a la légèreté des tomcats (test lancés via `docker compose run --rm loadtest`) :
 
@@ -255,7 +276,7 @@ Les différents tomcats, eux se repartissent bien la charge de manière égale :
 
 ![alt text](img/image-2.png)
 
-### 4.5 Limitation des ressources
+### 4.6 Limitation des ressources
 
 | Conteneur | Limite | Justification |
 |---|---|---|
@@ -277,13 +298,13 @@ Les différents tomcats, eux se repartissent bien la charge de manière égale :
 - **Sessions HTTP** : chaque Tomcat garde ses sessions en mémoire. L'API actuelle n'en utilise pas. Si c'était le cas, il faudrait des sessions persistantes dans nginx, un stockage partagé (Redis) ou une API sans état (jeton JWT).
 - **Swarm ou Kubernetes** ne deviennent utiles que pour répartir sur **plusieurs machines** ou mettre à jour sans interruption.
 
-### 4.4 Pourquoi pas swarm ?
+## 5. Pourquoi pas swarm ?
 
 Il aurait fallu rajouter une surcouche swarm qui aurait lancée les différents conteneurs préparés par le docker compose en amont, et qui auraient étés push sur mon regstry perso, c'est la prochaine étape mais je n'ai malheureusement pas reussi à le setup avant la fin du rendu...
 
 ---
 
-## 5. Commandes utiles et dépannage
+## 6. Commandes utiles et dépannage
 
 | Commande | Usage |
 |---|---|
