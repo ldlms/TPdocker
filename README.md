@@ -15,7 +15,8 @@ afin de limiter le code boilerplate a effectuer lors de la creation d'une applic
 2. [Architecture et schéma des communications](#2-architecture-et-schéma-des-communications)
 3. [Les images](#3-les-images)
 4. [Orchestration](#4-orchestration)
-5. [Commandes utiles et dépannage](#6-commandes-utiles-et-dépannage)
+5. [Pourquoi pas Swarm ?](#5-pourquoi-pas-swarm-)
+6. [Commandes utiles et dépannage](#6-commandes-utiles-et-dépannage)
 
 ---
 
