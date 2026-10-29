@@ -258,9 +258,19 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 
 Ressources : 
 
-Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu :
+Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu, grâce a la légèreté des tomcats :
 
-![alt text](image.png)
+![alt text](img/image.png)
+
+Stress test via grafana avec 10 tomcats lancés, on voit ici les limitation de ma machine au niveau du processseur mais pas au niveau de la mémoire :
+
+![alt text](img/image-1.png)
+
+Les différents tomcats, eux se repartissent bien la charge de manière égale :
+
+![alt text](img/image-2.png)
+
+
 
 **Limites :**
 
