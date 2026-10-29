@@ -51,3 +51,10 @@ services:
       context: ./dockerJs
       target: lint          # construit seulement jusqu'à l'étape "lint"
     profiles: [lint]
+
+  loadtest:
+    image: grafana/k6:0.54.0
+    profiles: [loadtest]
+    volumes:
+      - ./loadtest:/scripts:ro
+    command: ["run", "/scripts/stress.js"]

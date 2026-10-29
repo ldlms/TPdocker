@@ -238,7 +238,7 @@ docker compose run --rm --build lint-front
 - Chaque commande renvoie un code d'erreur si un problème est trouvé : elles peuvent donc être enchaînées dans un script ou une intégration continue.
 - Deux règles de hadolint sont des faux positifs, ignorés et justifiés : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
 
-### 4.7 Scaling de Tomcat
+### 4.3 Scaling de Tomcat
 
 Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est écrite dans le `.env` (`TOMCAT_REPLICAS`), puis utilisée par le compose :
 
@@ -256,14 +256,23 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 
 **Résultats mesurés avec 3 instances** : 60 requêtes simultanées se répartissent en **6 / 6 / 6** connexions, et avec une instance arrêtée, **20 requêtes sur 20** réussissent.
 
+Ressources : 
+
+Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu :
+
+![alt text](image.png)
+
 **Limites :**
 
-- **Les ressources sont par instance** : 3 Tomcat peuvent consommer jusqu'à 3 × 768 Mo et 3 CPU.
 - **Seul `tomcat` est multipliable** : `front` publie le port 80, qu'un seul conteneur peut occuper, et `db` ne se duplique pas sans mettre en place une réplication.
 - **Sessions HTTP** : chaque Tomcat garde ses sessions en mémoire. L'API actuelle n'en utilise pas. Si c'était le cas, il faudrait des sessions persistantes dans nginx, un stockage partagé (Redis) ou une API sans état (jeton JWT).
 - **Swarm ou Kubernetes** ne deviennent utiles que pour répartir sur **plusieurs machines** ou mettre à jour sans interruption.
 
 Pour un essai ponctuel, la ligne de commande l'emporte sur le `.env` : `docker compose up -d --scale tomcat=3`.
+
+### 4.4 Pourquoi pas swarm ?
+
+Il aurait fallu rajouter une surcouche swarm qui aurait lancée les différents conteneurs préparés par le docker compose en amont, et qui auraient étés push sur mon regstry perso, c'est la prochaine étape mais je n'ai malheureusement pas reussi à le setup avant la fin du rendu...
 
 ---
 
