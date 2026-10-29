@@ -1,7 +1,7 @@
 # TPdocker : boilerplate Tomcat conteneurisé
 
 Application web complète conteneurisée avec Docker Compose, le but étant de proposer un template, 
-afin de limiter le code boilerplate a effectuer lors de la creation d'une application centrée sur un .war. Aucun fichier .env n'est requis car il est crée par le script de lancement. L'application démarre via un script qui initialisera un tomcat servant l'application java et une base de donnée sera initailisée via les choix de l'utilisateur, un front-end en React sera lui aussi crée lors du lancement du script :
+afin de limiter le code boilerplate a effectuer lors de la creation d'une application centrée sur un .war. Aucun fichier .env n'est requis car il est crée par le script de lancement. L'application démarre via un script qui initialisera un tomcat servant l'application java et une base de donnée sera initailisée via les choix de l'utilisateur, un front-end en React sera build et servi par nginx lors du lancement du script :
 
 - un **front React** (Vite) servi par **nginx** ;
 - une **API Java** (servlets Jakarta) packagée en WAR et déployée dans **Tomcat 11** ;
@@ -167,7 +167,7 @@ flowchart TB
     central -.-> T
 ```
 
-Dans le Dockerfile de Tomcat, `COPY --from=webapp` désigne l'image construite par le service `webapp`. C'est la ligne `additional_contexts: webapp: service:webapp` du compose qui fait ce lien, et qui oblige Compose à construire `webapp` **avant** `tomcat`. J'avais au debut utilisé "depends on", mais cette commande ne marachait pas car depend_on va attendre qu'un conteneur tourne alors que le but du service webapp est justement de "s'eteindre" après complétion. De plus, "additional_context" donne accés à la production d'un autre service, ici lui permettant de recupérer les .war produit dans webapp.
+Dans le Dockerfile de Tomcat, `COPY --from=webapp` désigne l'image construite par le service `webapp`. C'est la ligne `additional_contexts: webapp: service:webapp` du compose qui fait ce lien, et qui oblige Compose à construire `webapp` **avant** `tomcat`. J'avais au debut utilisé "depends on", mais cette commande ne marchait pas car webapp ne lance jamais de conteneur (replicas: 0) : il sert a construire une image. De plus, "additional_context" donne accés à la production d'un autre service, ici lui permettant de recupérer les .war produit dans webapp.
 
 ---
 
@@ -244,7 +244,7 @@ docker compose run --rm --build lint-front
 - Chaque outil tourne dans son image officielle : rien à installer sur la machine.
 - Le projet est monté en **lecture seule** (`.:/src:ro`) : le lint ne peut rien modifier.
 - Chaque commande renvoie un code d'erreur si un problème est trouvé : elles peuvent donc être enchaînées dans un script ou une intégration continue.
-- Deux règles de hadolint sont des faux positifs, ignorés et justifiés : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
+- Deux règles de hadolint sont des faux positifs : `DL3020` (le `ADD` télécharge une URL, ce que `COPY` ne sait pas faire ; commentaire dans le Dockerfile) et `DL3022` (`COPY --from=webapp` vise un contexte fourni par le compose ; fichier `.hadolint.yaml`).
 
 ### 4.4 Scaling de Tomcat
 
@@ -253,7 +253,7 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 ```yaml
   tomcat:
     deploy:
-      replicas: ${TOMCAT_REPLICAS:-1}   # 1 par défaut si la variable est absente du .env
+      replicas: ${NB_REPLICAS:-1}   # 1 par défaut si la variable est absente du .env
 ```
 
 **Pourquoi Docker Compose suffit, sans Swarm.** Sur une seule machine, Compose sait lancer plusieurs conteneurs d'un même service. Trois éléments le permettent :

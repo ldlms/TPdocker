@@ -3,7 +3,7 @@
 /dependency/*.jar
 /logs/
 /data/
-
+/secrets/
 /.env
 /docker-compose-*.yml
 /compose.yml
