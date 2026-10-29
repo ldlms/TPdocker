@@ -168,6 +168,7 @@ flowchart TB
 ```
 
 Dans le Dockerfile de Tomcat, `COPY --from=webapp` désigne l'image construite par le service `webapp`. C'est la ligne `additional_contexts: webapp: service:webapp` du compose qui fait ce lien, et qui oblige Compose à construire `webapp` **avant** `tomcat`. J'avais au debut utilisé "depends on", mais cette commande ne marchait pas car webapp ne lance jamais de conteneur (replicas: 0) : il sert a construire une image. De plus, "additional_context" donne accés à la production d'un autre service, ici lui permettant de recupérer les .war produit dans webapp.
+Il aurait aussi été possible d'enregistrer le .war sur le disque afin de le rendre disponible pour l'étape suivante, ou de build le .war dans le docker-compose du dockerServer.
 
 ---
 
