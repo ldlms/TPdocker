@@ -187,22 +187,7 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 
 ## 4. Orchestration
 
-### 4.1 Limitation des ressources
-
-| Conteneur | Limite | Justification |
-|---|---|---|
-| `front` (nginx) | **64 Mo** | nginx ne sert que des fichiers statiques et relaie des requêtes : il consomme quelques Mo. 64 Mo laissent une marge confortable. |
-| `tomcat` | **768 Mo, 1 CPU** | Une JVM a besoin d'espace pour ses objets (*heap*), mais aussi pour le code compilé, les threads et le reste de la JVM. 1 CPU permet à Tomcat de démarrer bien avant les 60 s du `start_period` du healthcheck : avec moins, le démarrage ralentit fortement. |
-| `tomcat` (JVM) | **`-XX:MaxRAMPercentage=75`** | La JVM lit la limite du conteneur et s'accorde 75 % pour le *heap* (environ 576 Mo). Les 25 % restants servent au reste de la JVM. Sans cette option, la JVM ne prendrait que 25 % de la mémoire par défaut. Sans limite dans le compose, le pourcentage s'appliquerait à toute la mémoire de la machine. |
-| `db` (les 3 bases) | **512 Mo** | Suffisant pour une petite base de développement. MySQL et MariaDB sont les plus gourmands au démarrage. |
-| `webapp` | aucune | Jamais lancé (`replicas: 0`) |
-| `setup` | aucune | Ne vit que quelques secondes, le temps des questions |
-
-- Les limites sont déclarées avec `deploy.resources.limits`, appliqué par `docker compose` même hors Docker Swarm.
-- Chaque limite est définie **dans le fichier qui déclare le service** : `front` à la racine, `tomcat` dans `dockerServer/`, `db` dans chaque fragment `db/<base>.yaml`.
-- Un conteneur qui dépasse sa limite mémoire est tué par Docker (code 137, `OOMKilled`), puis relancé par `restart: unless-stopped`. `docker stats` permet de suivre la consommation réelle.
-
-### 4.2 Gestion des SIGTERM
+### 4.1 Gestion des SIGTERM
 
 À l'arrêt (`docker compose stop`, `down`, ou un redémarrage), Docker envoie un signal **au PID 1** du conteneur, puis le tue de force (SIGKILL) au bout de 10 secondes s'il est toujours là. Un arrêt propre suppose donc que le vrai programme soit le PID 1 et qu'il réagisse au signal.
 
@@ -217,7 +202,7 @@ Les images `webapp` et `front` sont construites en **plusieurs étapes** (*multi
 - **`front` et `db`** : les images officielles déclarent elles-mêmes le signal adapté à leur arrêt propre. MySQL et MariaDB gèrent SIGTERM nativement.
 - **`setup`** : Node n'est pas conçu pour tourner en PID 1. Linux ignore alors les signaux pour lesquels il n'a rien prévu, et un Ctrl+C restait sans effet. **`init: true`** place en PID 1 un mini-processus (`tini`) qui transmet les signaux à Node.
 
-### 4.6 Lint
+### 4.2 Lint
 
 Trois services vérifient la qualité du code. Comme `setup`, ils ont le profil `lint` : `docker compose up` les ignore, et on les lance à la demande.
 
@@ -256,9 +241,9 @@ Le setup demande le **nombre d'instances Tomcat** (de 1 à 10). La réponse est 
 
 **Résultats mesurés avec 3 instances** : 60 requêtes simultanées se répartissent en **6 / 6 / 6** connexions, et avec une instance arrêtée, **20 requêtes sur 20** réussissent.
 
-Ressources : 
+### 4.4 Ressources  
 
-Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu, grâce a la légèreté des tomcats :
+Meme avec 10 Tomcats lancés, la consomation reste raisonable, même sous traffic soutenu, grâce a la légèreté des tomcats (test lancés via `docker compose run --rm loadtest`) :
 
 ![alt text](img/image.png)
 
@@ -270,6 +255,20 @@ Les différents tomcats, eux se repartissent bien la charge de manière égale :
 
 ![alt text](img/image-2.png)
 
+### 4.5 Limitation des ressources
+
+| Conteneur | Limite | Justification |
+|---|---|---|
+| `front` (nginx) | **64 Mo** | nginx ne sert que des fichiers statiques et relaie des requêtes : il consomme quelques Mo. 64 Mo laissent une marge confortable. |
+| `tomcat` | **768 Mo, 1 CPU** | Une JVM a besoin d'espace pour ses objets (*heap*), mais aussi pour le code compilé, les threads et le reste de la JVM. 1 CPU permet à Tomcat de démarrer bien avant les 60 s du `start_period` du healthcheck : avec moins, le démarrage ralentit fortement. |
+| `tomcat` (JVM) | **`-XX:MaxRAMPercentage=75`** | La JVM lit la limite du conteneur et s'accorde 75 % pour le *heap* (environ 576 Mo). Les 25 % restants servent au reste de la JVM. Sans cette option, la JVM ne prendrait que 25 % de la mémoire par défaut. Sans limite dans le compose, le pourcentage s'appliquerait à toute la mémoire de la machine. |
+| `db` (les 3 bases) | **512 Mo** | Suffisant pour une petite base de développement. MySQL et MariaDB sont les plus gourmands au démarrage. |
+| `webapp` | aucune | Jamais lancé (`replicas: 0`) |
+| `setup` | aucune | Ne vit que quelques secondes, le temps des questions |
+
+- Les limites sont déclarées avec `deploy.resources.limits`, appliqué par `docker compose` même hors Docker Swarm.
+- Chaque limite est définie **dans le fichier qui déclare le service** : `front` à la racine, `tomcat` dans `dockerServer/`, `db` dans chaque fragment `db/<base>.yaml`.
+- Un conteneur qui dépasse sa limite mémoire est tué par Docker (code 137, `OOMKilled`), puis relancé par `restart: unless-stopped`. `docker stats` permet de suivre la consommation réelle.
 
 
 **Limites :**
